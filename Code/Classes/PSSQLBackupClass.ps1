@@ -24,7 +24,7 @@ class PSSQLBackupClass {
 
     # Methods
         [psobject]Show([string]$Path) {
-            $item = Get-Item -Path $Path
+            $item = [System.IO.FileInfo]::new($Path)
             if ($item.Name -match '_') {
                 $Name = ($item.Name).Substring(0,$item.Name.IndexOf('_'))
                 $FileStatus = 'DONE'

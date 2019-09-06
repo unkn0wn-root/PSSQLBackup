@@ -139,7 +139,7 @@ function New-PSSQLBackup {
                 Write-Output ""
 
                 # If sucessfull - building object and for each Database
-                $BackupFileInfo = Get-Item -Path $backupFile
+                $BackupFileInfo = [FileInfo]::new($Path)
                 $SQLBackupOutput = [PSSQLBackupClass]::new($db, $backupName, $BackupFileInfo.LastWriteTime, $BackupFileInfo.Length, 'DONE')
                 $SQLBackupOutput | Add-Member -NotePropertyMembers @{ServerName = $SQLServer}
                 $BackupResults.Add($SQLBackupOutput)
