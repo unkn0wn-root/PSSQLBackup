@@ -423,11 +423,13 @@ function Remove-PSSQLBackup {
         Mandatory = $true,
         ValueFromPipeline,
         ValueFromPipelineByPropertyName)]
+        [ValidateNotNullOrEmpty()]
         [string]$Path,
 
         [Parameter(
         Mandatory = $true, ValueFromPipeline)]
         [Alias('File')]
+        [ValidateNotNullOrEmpty()]
         [string[]]$FileName,
 
         # Filter param 
