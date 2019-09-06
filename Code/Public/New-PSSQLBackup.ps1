@@ -14,7 +14,6 @@
     GitHub: unkn0wn-root
     Twitter: david0_shell
 #>
-#requires -Modules SQLBackup
 #requires -RunAsAdministrator
 #requires -Version 5
 
@@ -73,10 +72,12 @@ function New-PSSQLBackup {
         }
         try {
             if (!(Get-Module -Name SQLServer -ListAvailable)) {
-                Install-Module -Name SqlServer -AllowClobber
+                Write-Warning "[Warning] SQLServer Module not installed. Installing now..."
+                [void](Install-Module -Name SqlServer -AllowClobber)
             }
             else {
-                Import-Module -Name SqlServer -AllowClobber
+                Write-Output "[INFO] SQLServer Module installed. Importing...."
+                [void](Import-Module -Name SqlServer -AllowClobber)
             }
         }
         catch {
@@ -91,7 +92,7 @@ function New-PSSQLBackup {
             [void]([System.Reflection.Assembly]::LoadWithPartialName("Microsoft.SqlServer.SmoExtended"))
         }
         catch {
-            Throw "[ERROR] Couldn't load Microsoft.SqlServer Asssembly. Aborting"
+            Throw "[ERROR] Couldn't load Microsoft.SqlServer Asssembly. SQLServer module must be installed! Aborting..."
             "[$(Get-Date)] :: $($_.Exception.Message)" | Out-File $LogFile -Append
             return
         }

@@ -75,16 +75,16 @@ function Remove-PSSQLBackup {
         if (-not $PSBoundParameters.ContainsKey('WhatIf')) {
             $WhatIfPreference = $PSCmdlet.SessionState.PSVariable.GetValue('WhatIfPreference')
         }
+        [array]$FilesArray = Get-ChildItem -Path $Path -File -Force
         [string]$LogFile = "$env:SystemDrive\Temp\SQLDBBackup_log.txt"
         if (-not([Directory]::Exists($LogFile))){
             [void]([File]::Create($LogFile))
         }
-        $BackupFiles = Get-ChildItem -Path $Path -File -Force
-        if ($Name) {
-            $BackupPath = $BackupFiles | Where-Object {$_.Name -like $FileName}
+        if ($FileName) {
+            $BackupPath = $FilesArray | Where-Object {$_.Name -like $FileName}
         }
         else {
-            $BackupPath = $BackupFiles
+            $BackupPath = $FilesArray
         }
     }
     

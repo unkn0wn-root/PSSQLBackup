@@ -118,7 +118,8 @@ function Get-PSSQLBackup {
                     # Then it will search for specified Name and return object
                     # It supports Wildcard search
                     $FullPath = $Path + '\' + $Name
-                    [array]$PathEx = (Get-Item -Path $FullPath).FullName
+                    [array]$PathEx = (Get-Item -Path $FullPath |
+                    Where-Object {$_.PSIsContainer -eq $false}).FullName
                     foreach ($UNC in $PathEx) {
                         $Object = [SQLBackupClass]::New()
                         $CacheObject = $Object.Show($UNC)

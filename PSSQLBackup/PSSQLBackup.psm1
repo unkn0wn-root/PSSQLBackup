@@ -176,9 +176,10 @@ function Get-PSSQLBackup {
                     # Then it will search for specified Name and return object
                     # It supports Wildcard search
                     $FullPath = $Path + '\' + $Name
-                    [array]$PathEx = (Get-Item -Path $FullPath).FullName
+                    [array]$PathEx = (Get-Item -Path $FullPath | 
+                    Where-Object {$_.PSIsContainer -eq $false}).FullName
                     foreach ($UNC in $PathEx) {
-                        $Object = [SQLBackupClass]::New()
+                        $Object = [PSSQLBackupClass]::New()
                         $CacheObject = $Object.Show($UNC)
                         $Output.Add($CacheObject)
                     }
@@ -274,10 +275,12 @@ function New-PSSQLBackup {
         }
         try {
             if (!(Get-Module -Name SQLServer -ListAvailable)) {
-                Install-Module -Name SqlServer -AllowClobber
+                Write-Warning "[Warning] SQLServer Module not installed. Installing now..."
+                [void](Install-Module -Name SqlServer -AllowClobber)
             }
             else {
-                Import-Module -Name SqlServer -AllowClobber
+                Write-Output "[INFO] SQLServer Module installed. Importing..."
+                [void](Import-Module -Name SqlServer -AllowClobber)
             }
         }
         catch {
@@ -292,7 +295,7 @@ function New-PSSQLBackup {
             [void]([System.Reflection.Assembly]::LoadWithPartialName("Microsoft.SqlServer.SmoExtended"))
         }
         catch {
-            Throw "[ERROR] Couldn't load Microsoft.SqlServer Asssembly. Aborting"
+            Throw "[ERROR] Couldn't load Microsoft.SqlServer Asssembly. SQLServer module must be installed! Aborting..."
             "[$(Get-Date)] :: $($_.Exception.Message)" | Out-File $LogFile -Append
             return
         }
@@ -455,16 +458,16 @@ function Remove-PSSQLBackup {
         if (-not $PSBoundParameters.ContainsKey('WhatIf')) {
             $WhatIfPreference = $PSCmdlet.SessionState.PSVariable.GetValue('WhatIfPreference')
         }
+        [array]$FilesArray = Get-ChildItem -Path $Path -File -Force
         [string]$LogFile = "$env:SystemDrive\Temp\SQLDBBackup_log.txt"
         if (-not([Directory]::Exists($LogFile))){
             [void]([File]::Create($LogFile))
         }
-        $BackupFiles = Get-ChildItem -Path $Path -File -Force
-        if ($Name) {
-            $BackupPath = $BackupFiles | Where-Object {$_.Name -like $FileName}
+        if ($FileName) {
+            $BackupPath = $FilesArray | Where-Object {$_.Name -like $FileName}
         }
         else {
-            $BackupPath = $BackupFiles
+            $BackupPath = $FilesArray
         }
     }
     
