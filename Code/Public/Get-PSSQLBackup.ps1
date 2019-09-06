@@ -121,7 +121,7 @@ function Get-PSSQLBackup {
                     [array]$PathEx = (Get-Item -Path $FullPath |
                     Where-Object {$_.PSIsContainer -eq $false}).FullName
                     foreach ($UNC in $PathEx) {
-                        $Object = [SQLBackupClass]::New()
+                        $Object = [SQLBackup]::New()
                         $CacheObject = $Object.Show($UNC)
                         $Output.Add($CacheObject)
                     }
@@ -131,7 +131,7 @@ function Get-PSSQLBackup {
                     # Note that 'show' is not static method so need to create new object 
                     # every time we go through in loop
                     foreach ($item in $Filter){
-                        $Object = [PSSQLBackupClass]::New()
+                        $Object = [PSSQLBackup]::New()
                         $CacheObject = $Object.Show($item.FullName)
                         $Output.Add($CacheObject)
                     }

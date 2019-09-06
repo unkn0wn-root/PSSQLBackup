@@ -40,11 +40,13 @@ function Remove-PSSQLBackup {
         Mandatory = $true,
         ValueFromPipeline,
         ValueFromPipelineByPropertyName)]
+        [ValidateNotNullOrEmpty()]
         [string]$Path,
 
         [Parameter(
         Mandatory = $true, ValueFromPipeline)]
         [Alias('File')]
+        [ValidateNotNullOrEmpty()]
         [string[]]$FileName,
 
         # Filter param 
@@ -106,9 +108,9 @@ function Remove-PSSQLBackup {
             try{
                 if ($Force -or $PSCmdlet.ShouldProcess("Removing $($Backupfile.Name) from $($BackupFile.DirectoryName)")) {
                     Write-Output "[INFO]Removing $($BackupFile.Name)..."
-                    [PSSQLBackupClass]::Remove($BackupFile.FullName)    # Using SQLClass to remove backup file
+                    [PSSQLBackup]::Remove($BackupFile.FullName)    # Using SQLClass to remove backup file
                     Write-Output "$($BackupFile.Name) removed!"
-                    $RMFiles = [PSSQLBackupClass]::new()
+                    $RMFiles = [PSSQLBackup]::new()
                     $RMFiles.BackupName = $BackupFile.Name
                     $RMFiles | Add-Member -NotePropertyMembers @{RemovedTime = (Get-Date)}
                     $RMFiles.BackupStatus = 'REMOVED'
@@ -117,7 +119,7 @@ function Remove-PSSQLBackup {
             }
             catch {
                 Throw "[ERROR] Couldn't remove $($BackupFile.Name)..."
-                $Failed = [PSSQLBackupClass]::new()
+                $Failed = [PSSQLBackup]::new()
                 $Failed.BackupName = $BackupFile.Name
                 $Failed | Add-Member -NotePropertyMembers @{FailedTime = (Get-Date)}
                 $Failed.BackupStatus = 'FAILED!'

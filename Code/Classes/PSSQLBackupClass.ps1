@@ -1,28 +1,32 @@
-class PSSQLBackupClass {
+# PSSQLBackupClass initialization. Needs to be loaded before functions
+class PSSQLBackup {
+    hidden[string]$SQLServer = 'localhost'
     [string]$Database
     [string]$BackupName
+    hidden[string]$FullName
     [datetime]$BackupDate
     [int]$SizeInMB
     [string]$BackupStatus
-    hidden[string]$SQLServer = 'localhost'
 
-        PSSQLBackupClass() {
+        PSSQLBackup() {
             $this.SQLServer
             $this.Database
             $this.BackupName
             $this.BackupDate
             $this.SizeInMB
+            $this.FullName
         }
-
-        PSSQLBackupClass([string]$Database, [string]$BackupName, [datetime]$BackupDate, [int]$SizeInMB, [string]$Status) {
+        # Class constructor - 
+        PSSQLBackup([string]$Database, [string]$BackupName, [datetime]$BackupDate, [string]$Path, [int]$SizeInMB, [string]$Status) {
                 $this.Database = $Database
                 $this.BackupName = $BackupName
                 $this.BackupDate = $BackupDate
+                $this.FullName = $Path
                 $this.SizeInMB = ([math]::Round($SizeInMB /1MB, 2))
                 $this.BackupStatus = $Status
     }
 
-    # Methods
+        # Methods
         [psobject]Show([string]$Path) {
             $item = [System.IO.FileInfo]::new($Path)
             if ($item.Name -match '_') {
@@ -33,7 +37,15 @@ class PSSQLBackupClass {
                 $Name = 'N/A'
                 $FileStatus = 'UNCONFIRMED'
             }
-            $Objects = [PSSQLBackupClass]::new($Name, $item.name, $item.LastWriteTime, $item.Length, $FileStatus)
+            # Building actual object
+            $Objects = [PSSQLBackup]::new()
+            $Objects.Database = $Name
+            $Objects.BackupName = $item.name
+            $Objects.BackupDate = $item.LastWriteTime
+            $Objects.FullName = $item.FullName
+            $Objects.SizeInMB = ([math]::Round($item.Length /1MB, 2)) 
+            $Objects.BackupStatus = $FileStatus
+            # return object
             return $Objects
     }
 

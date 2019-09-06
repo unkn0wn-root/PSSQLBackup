@@ -8,7 +8,7 @@ using namespace System.IO
 #requires -Version 5
 
 # PSSQLBackupClass initialization. Needs to be loaded before functions
-class PSSQLBackupClass {
+class PSSQLBackup {
     hidden[string]$SQLServer = 'localhost'
     [string]$Database
     [string]$BackupName
@@ -17,7 +17,7 @@ class PSSQLBackupClass {
     [int]$SizeInMB
     [string]$BackupStatus
 
-        PSSQLBackupClass() {
+        PSSQLBackup() {
             $this.SQLServer
             $this.Database
             $this.BackupName
@@ -26,7 +26,7 @@ class PSSQLBackupClass {
             $this.FullName
         }
         # Class constructor - 
-        PSSQLBackupClass([string]$Database, [string]$BackupName, [datetime]$BackupDate, [string]$Path, [int]$SizeInMB, [string]$Status) {
+        PSSQLBackup([string]$Database, [string]$BackupName, [datetime]$BackupDate, [string]$Path, [int]$SizeInMB, [string]$Status) {
                 $this.Database = $Database
                 $this.BackupName = $BackupName
                 $this.BackupDate = $BackupDate
@@ -47,7 +47,7 @@ class PSSQLBackupClass {
                 $FileStatus = 'UNCONFIRMED'
             }
             # Building actual object
-            $Objects = [PSSQLBackupClass]::new()
+            $Objects = [PSSQLBackup]::new()
             $Objects.Database = $Name
             $Objects.BackupName = $item.name
             $Objects.BackupDate = $item.LastWriteTime
@@ -190,7 +190,7 @@ function Get-PSSQLBackup {
                     [array]$PathEx = (Get-Item -Path $FullPath | 
                     Where-Object {$_.PSIsContainer -eq $false}).FullName
                     foreach ($UNC in $PathEx) {
-                        $Object = [PSSQLBackupClass]::New()
+                        $Object = [PSSQLBackup]::New()
                         $CacheObject = $Object.Show($UNC)
                         $Output.Add($CacheObject)
                     }
@@ -200,7 +200,7 @@ function Get-PSSQLBackup {
                     # Note that 'show' is not static method so need to create new object 
                     # every time we go through in loop
                     foreach ($item in $Filter){
-                        $Object = [PSSQLBackupClass]::New()
+                        $Object = [PSSQLBackup]::New()
                         $CacheObject = $Object.Show($item.FullName)
                         $Output.Add($CacheObject)
                     }
@@ -355,7 +355,7 @@ function New-PSSQLBackup {
 
                 # If sucessfull - building object and for each Database
                 $BackupFileInfo = [FileInfo]::new($Path)
-                $SQLBackupOutput = [PSSQLBackupClass]::new($db, $backupName, $BackupFileInfo.LastWriteTime, $BackupFileInfo.FullName, $BackupFileInfo.Length, 'DONE')
+                $SQLBackupOutput = [PSSQLBackup]::new($db, $backupName, $BackupFileInfo.LastWriteTime, $BackupFileInfo.FullName, $BackupFileInfo.Length, 'DONE')
                 $SQLBackupOutput | Add-Member -NotePropertyMembers @{ServerName = $SQLServer}
                 $BackupResults.Add($SQLBackupOutput)
             }
@@ -364,7 +364,7 @@ function New-PSSQLBackup {
                 Throw "[ERROR] Backup of $db - Status: FAILED"
                 
                 #If failed - building object for each Database
-                $SQLBackupOutput = [PSSQLBackupClass]::new()
+                $SQLBackupOutput = [PSSQLBackup]::new()
                 $SQLBackupOutput.Database = $db
                 $SQLBackupOutput.BackupName = $backupName
                 $SQLBackupOutput.BackupStatus = 'FAILED!'
@@ -502,9 +502,9 @@ function Remove-PSSQLBackup {
             try{
                 if ($Force -or $PSCmdlet.ShouldProcess("Removing $($Backupfile.Name) from $($BackupFile.DirectoryName)")) {
                     Write-Output "[INFO]Removing $($BackupFile.Name)..."
-                    [PSSQLBackupClass]::Remove($BackupFile.FullName)    # Using SQLClass to remove backup file
+                    [PSSQLBackup]::Remove($BackupFile.FullName)    # Using SQLClass to remove backup file
                     Write-Output "$($BackupFile.Name) removed!"
-                    $RMFiles = [PSSQLBackupClass]::new()
+                    $RMFiles = [PSSQLBackup]::new()
                     $RMFiles.BackupName = $BackupFile.Name
                     $RMFiles | Add-Member -NotePropertyMembers @{RemovedTime = (Get-Date)}
                     $RMFiles.BackupStatus = 'REMOVED'
@@ -513,7 +513,7 @@ function Remove-PSSQLBackup {
             }
             catch {
                 Throw "[ERROR] Couldn't remove $($BackupFile.Name)..."
-                $Failed = [PSSQLBackupClass]::new()
+                $Failed = [PSSQLBackup]::new()
                 $Failed.BackupName = $BackupFile.Name
                 $Failed | Add-Member -NotePropertyMembers @{FailedTime = (Get-Date)}
                 $Failed.BackupStatus = 'FAILED!'

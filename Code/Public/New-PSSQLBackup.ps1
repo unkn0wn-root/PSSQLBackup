@@ -141,7 +141,7 @@ function New-PSSQLBackup {
 
                 # If sucessfull - building object and for each Database
                 $BackupFileInfo = [FileInfo]::new($Path)
-                $SQLBackupOutput = [PSSQLBackupClass]::new($db, $backupName, $BackupFileInfo.LastWriteTime, $BackupFileInfo.Length, 'DONE')
+                $SQLBackupOutput = [PSSQLBackup]::new($db, $backupName, $BackupFileInfo.LastWriteTime, $BackupFileInfo.FullName, $BackupFileInfo.Length, 'DONE')
                 $SQLBackupOutput | Add-Member -NotePropertyMembers @{ServerName = $SQLServer}
                 $BackupResults.Add($SQLBackupOutput)
             }
@@ -150,7 +150,7 @@ function New-PSSQLBackup {
                 Throw "[ERROR] Backup of $db - Status: FAILED"
                 
                 #If failed - building object for each Database
-                $SQLBackupOutput = [PSSQLBackupClass]::new()
+                $SQLBackupOutput = [PSSQLBackup]::new()
                 $SQLBackupOutput.Database = $db
                 $SQLBackupOutput.BackupName = $backupName
                 $SQLBackupOutput.BackupStatus = 'FAILED!'

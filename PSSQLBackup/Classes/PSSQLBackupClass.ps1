@@ -1,5 +1,5 @@
 # PSSQLBackupClass initialization. Needs to be loaded before functions
-class PSSQLBackupClass {
+class PSSQLBackup {
     hidden[string]$SQLServer = 'localhost'
     [string]$Database
     [string]$BackupName
@@ -8,7 +8,7 @@ class PSSQLBackupClass {
     [int]$SizeInMB
     [string]$BackupStatus
 
-        PSSQLBackupClass() {
+        PSSQLBackup() {
             $this.SQLServer
             $this.Database
             $this.BackupName
@@ -17,7 +17,7 @@ class PSSQLBackupClass {
             $this.FullName
         }
         # Class constructor - 
-        PSSQLBackupClass([string]$Database, [string]$BackupName, [datetime]$BackupDate, [string]$Path, [int]$SizeInMB, [string]$Status) {
+        PSSQLBackup([string]$Database, [string]$BackupName, [datetime]$BackupDate, [string]$Path, [int]$SizeInMB, [string]$Status) {
                 $this.Database = $Database
                 $this.BackupName = $BackupName
                 $this.BackupDate = $BackupDate
@@ -38,7 +38,7 @@ class PSSQLBackupClass {
                 $FileStatus = 'UNCONFIRMED'
             }
             # Building actual object
-            $Objects = [PSSQLBackupClass]::new()
+            $Objects = [PSSQLBackup]::new()
             $Objects.Database = $Name
             $Objects.BackupName = $item.name
             $Objects.BackupDate = $item.LastWriteTime
