@@ -308,7 +308,7 @@ function New-PSSQLBackup {
         catch {
             Throw "[ERROR] Couldn't load Microsoft.SqlServer Asssembly. SQLServer module must be installed! Aborting..."
             "[$(Get-Date)] :: $($_.Exception.Message)" | Out-File $LogFile -Append
-            return
+            exit
         }
     }
     
@@ -340,7 +340,7 @@ function New-PSSQLBackup {
             catch {
                 Throw "Something went wrong. Check Log! Building backup of $db - FAILED"
                 "[$(Get-Date)] :: $($_.Exception.Message)" | Out-File $LogFile -Append
-                return
+                exit
             }
     
             try {
@@ -393,7 +393,7 @@ function New-PSSQLBackup {
         catch {
             Throw "[ERROR] Couldn't find SQLBackupStatus.html. Aborting sending mail message..."
             "[$(Get-Date)] :: $($_.Exception.Message)" | Out-File $LogFile -Append
-            return
+            exit
         }
     }
 }
