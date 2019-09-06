@@ -177,7 +177,7 @@ function Get-PSSQLBackup {
                     # Then it will search for specified Name and return object
                     # It supports Wildcard search
                     $FullPath = $Path + '\' + $Name
-                    [array]$PathEx = [Directory]::GetFiles($FullPath)
+                    [array]$PathEx = (Get-Item -Path $FullPath).FullName
                     foreach ($UNC in $PathEx) {
                         $Object = [SQLBackupClass]::New()
                         $CacheObject = $Object.Show($UNC)
@@ -461,10 +461,10 @@ function Remove-PSSQLBackup {
             [void]([File]::Create($LogFile))
         }
         if ($Name) {
-            $BackupPath = Get-ChildItem -Path $Path -Force | Where-Object {$_.Name -like $FileName}
+            $BackupPath = Get-ChildItem -Path $Path -File -Force | Where-Object {$_.Name -like $FileName}
         }
         else {
-            $BackupPath = [Directory]::GetFiles($Path)
+            $BackupPath = Get-ChildItem -Path $Path -File -Force
         }
     }
     
