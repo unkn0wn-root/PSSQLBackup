@@ -26,7 +26,6 @@
     GitHub: unkn0wn-root
     Twitter: david0_shell
 #>
-#requires -Modules SQLBackup
 #requires -RunAsAdministrator
 #requires -Version 5
 
@@ -80,11 +79,12 @@ function Remove-PSSQLBackup {
         if (-not([Directory]::Exists($LogFile))){
             [void]([File]::Create($LogFile))
         }
+        $BackupFiles = Get-ChildItem -Path $Path -File -Force
         if ($Name) {
-            $BackupPath = Get-ChildItem -Path $Path -Force | Where-Object {$_.Name -like $FileName}
+            $BackupPath = $BackupFiles | Where-Object {$_.Name -like $FileName}
         }
         else {
-            $BackupPath = [Directory]::GetFiles($Path)
+            $BackupPath = $BackupFiles
         }
     }
     
