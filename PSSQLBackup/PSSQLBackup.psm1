@@ -4,7 +4,6 @@ using namespace System.Net.Mail
 using namespace System.IO
 
 # pre launch requirements
-#requires -Modules SQLBackup
 #requires -RunAsAdministrator
 #requires -Version 5
 
