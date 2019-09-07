@@ -271,7 +271,7 @@ function New-PSSQLBackup {
     TD {border-width: 1px; padding: 3px; border-style: solid; border-color: black;}
     </style>
 "@
-
+    $InformationPreference = 'Continue'
     $BackupResults = [List[psobject]]::new()
     [datetime]$timestamp = Get-Date -format yyyy-MM-dd-HHmmss
     # Mail Server Configuration variables
@@ -290,7 +290,7 @@ function New-PSSQLBackup {
                 [void](Install-Module -Name SqlServer -AllowClobber)
             }
             else {
-                Write-Output "[INFO] SQLServer Module installed. Importing..."
+                Write-Information "[INFO] SQLServer Module installed. Importing..."
                 [void](Import-Module -Name SqlServer -AllowClobber)
             }
         }
@@ -314,9 +314,9 @@ function New-PSSQLBackup {
     
     process {
         foreach ($db in $SqlDatabase | Where-Object { $_.IsSystemObject -eq $False}){
-            Write-Output "[INFO] Starter Backup-SQL-Database $TimeStarted"
-            Write-Output "[INFO] Database: $db"
-            Write-Output "[INFO] SQLBackup destination: $Path"
+            Write-Information "[INFO] Starter Backup-SQL-Database $TimeStarted"
+            Write-Information "[INFO] Database: $db"
+            Write-Information "[INFO] SQLBackup destination: $Path"
             #SQL Backup initial config
             $SQLBackup = [Microsoft.SqlServer.Management.Smo.Server]::new($SqlServer)
             $backupFile = $Path + '\' + $db + '_' + $timestamp + '.bak'
@@ -345,13 +345,13 @@ function New-PSSQLBackup {
     
             try {
                 # Starting SQL Server backup after building all neccessery args.
-                Write-Output "[INFO]"
-                Write-Output "Starting backup of $db"
+                Write-Information "[INFO]"
+                Write-Information "Starting backup of $db"
                 $smoBackup.SqlBackup($SQLBackup)
                 
-                Write-Output "[INFO] Backup Done on :: $(Get-Date)"
-                Write-Output "[DONE]"
-                Write-Output ""
+                Write-Information "[INFO] Backup Done on :: $(Get-Date)"
+                Write-Information "[DONE]"
+                Write-Information ""
 
                 # If sucessfull - building object and for each Database
                 $BackupFileInfo = [FileInfo]::new($Path)
@@ -465,6 +465,8 @@ function Remove-PSSQLBackup {
     )
     
     begin {
+        $InformationPreference = 'Continue'
+        
         if (-not $PSBoundParameters.ContainsKey('Confirm')) {
             $ConfirmPreference = $PSCmdlet.SessionState.PSVariable.GetValue('ConfirmPreference')
         }
@@ -501,9 +503,9 @@ function Remove-PSSQLBackup {
         foreach ($BackupFile in $PathFilter) {
             try{
                 if ($Force -or $PSCmdlet.ShouldProcess("Removing $($Backupfile.Name) from $($BackupFile.DirectoryName)")) {
-                    Write-Output "[INFO]Removing $($BackupFile.Name)..."
+                    Write-Information "[INFO]Removing $($BackupFile.Name)..."
                     [PSSQLBackup]::Remove($BackupFile.FullName)    # Using SQLClass to remove backup file
-                    Write-Output "$($BackupFile.Name) removed!"
+                    Write-Information "$($BackupFile.Name) removed!"
                     $RMFiles = [PSSQLBackup]::new()
                     $RMFiles.BackupName = $BackupFile.Name
                     $RMFiles | Add-Member -NotePropertyMembers @{RemovedTime = (Get-Date)}

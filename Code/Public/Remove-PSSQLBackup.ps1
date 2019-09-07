@@ -71,6 +71,8 @@ function Remove-PSSQLBackup {
     )
     
     begin {
+        $InformationPreference = 'Continue'
+        
         if (-not $PSBoundParameters.ContainsKey('Confirm')) {
             $ConfirmPreference = $PSCmdlet.SessionState.PSVariable.GetValue('ConfirmPreference')
         }
@@ -107,9 +109,9 @@ function Remove-PSSQLBackup {
         foreach ($BackupFile in $PathFilter) {
             try{
                 if ($Force -or $PSCmdlet.ShouldProcess("Removing $($Backupfile.Name) from $($BackupFile.DirectoryName)")) {
-                    Write-Output "[INFO]Removing $($BackupFile.Name)..."
+                    Write-Information "[INFO]Removing $($BackupFile.Name)..."
                     [PSSQLBackup]::Remove($BackupFile.FullName)    # Using SQLClass to remove backup file
-                    Write-Output "$($BackupFile.Name) removed!"
+                    Write-Information "$($BackupFile.Name) removed!"
                     $RMFiles = [PSSQLBackup]::new()
                     $RMFiles.BackupName = $BackupFile.Name
                     $RMFiles | Add-Member -NotePropertyMembers @{RemovedTime = (Get-Date)}
