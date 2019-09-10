@@ -57,15 +57,12 @@ function New-PSSQLBackup {
     TD {border-width: 1px; padding: 3px; border-style: solid; border-color: black;}
     </style>
 "@
-
+    # Changing information pref. to continue to display console messages
     $InformationPreference = 'Continue'
+    # Get configuration from json file
+    $null = Get-PSSQLConfig
     $BackupResults = [List[psobject]]::new()
     [datetime]$timestamp = Get-Date -format yyyy-MM-dd-HHmmss
-    # Mail Server Configuration variables
-    [string]$MailServer = 'EX01.mail.com'
-    [string]$To = 'systemadmin@mail.com'
-    [string]$From = 'SQLBackup@mail.com'
-    [string]$Subject = "SQLBackup Status - DONE "
     # Check if backup log file exist, if not - create it
     [string]$LogFile = "$env:SystemDrive\Temp\SQLDBBackup_log.txt"
         if (-not([Directory]::Exists($LogFile))){
@@ -169,13 +166,17 @@ function New-PSSQLBackup {
             [void]($BackupResults | ConvertTo-Html -Property BackupDB, BackupName, Status -Head $Head | 
             Out-File "$env:SystemDrive\Temp\SQLBackupStatus.html" -Force -ErrorAction Stop)
             $SQLStatusFile = Get-Content -Path "$env:SystemDrive\Temp\SQLBackupStatus.html" -ea Stop
-            $Message = [MailMessage]::new($From,$To) 
-            $Message.Subject = $Subject
-            $Message.IsBodyHtml = $true
-            $Message.Body = $SQLStatusFile
-            # Sends mail message with all objects and status
-            $SMTP = [SmtpClient]::new($MailServer)
-            $SMTP.Send($Message)
+            #Building mail parameters and values
+            $MailParams = @{
+                To = $Configuration.To
+                From = $Configuration.From
+                SMTPServer = $Configuration.MailServer
+                Subject = "SQLBackup Status - DONE "
+                Body = $SQLStatusFile
+                BodyAsHtml = $true
+            }
+
+            Send-MailMessage @MailParams
         }
         catch {
             Throw "[ERROR] Couldn't find SQLBackupStatus.html. Aborting sending mail message..."
