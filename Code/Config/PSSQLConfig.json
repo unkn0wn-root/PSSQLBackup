@@ -1,0 +1,5 @@
+{
+    "MailServer": "EX01.mail.com",
+    "To": "systemadmin@mail.com",
+    "From": "SQLBackup@mail.com"
+}
