@@ -7,7 +7,32 @@ using namespace System.IO
 #requires -RunAsAdministrator
 #requires -Version 5
 
+# Class for Logging events
+# This class is used to create log file and create log entries
+class Logger {
+    [datetime]$CreateTime
+    [string]$Name 
+    [string]$Path
+    hidden [string]$FullPath
+    
+    Logger(){}
+
+    # Methods
+    [Logger]Create([string]$Path,[string]$Name) {
+        $LogFile = New-Item -Path $Path -Name $Name -ItemType File -Force
+        $this.CreateTime = $LogFile.LastWriteTime
+        $this.Name = $LogFile.Name
+        $this.Path = $LogFile.DirectoryName
+        $this.FullPath = $LogFile.DirectoryName + '\' + $LogFile.Name
+        return $this
+    }
+    static [void]Add([string]$Path,[string]$Message) {
+        Add-Content -Path $Path -Value "[$(Get-Date)] :: $Message"
+    }
+}
+
 # PSSQLBackupClass initialization. Needs to be loaded before functions
+# This class is used to create PSSQLBackup objects
 class PSSQLBackup {
     hidden[string]$SQLServer = 'localhost'
     [string]$Database
@@ -178,9 +203,10 @@ function Get-PSSQLBackup {
         # Creating list for Objects
         $Output = [List[psobject]]::new()
         [array]$FilePath = Get-ChildItem -Path $Path -File
-        [string]$LogFile = "$env:SystemDrive\Temp\SQLDBBackup_log.txt"
-            if (-not([Directory]::Exists($LogFile))){
-                [void](New-Item -Path $LogFile -ItemType File -Force)
+        [DirectoryInfo]$LogPath = "$env:SystemDrive\Temp\SQLDBBackup_log.txt"
+            if (-not([Directory]::Exists($LogPath))){
+                $Log = [Logger]::new()
+                [void]($Log.Create($LogPath.Parent.FullName,$LogPath.BaseName))
         }
     }
     
@@ -231,7 +257,7 @@ function Get-PSSQLBackup {
                 # We need to be able to find more backup files even if we don't find name file
                 # then it will be just noted in log file but continue with next object
                 Write-Warning "Couldn't find any item matching $item."
-                "[$(Get-Date)] :: $($_.Exception.Message)" | Out-File $LogFile -Append
+                [Logger]::Add($LogPath,$_.Exception.Message)
                 Continue
             }
                 # return list with objects we found
@@ -296,10 +322,12 @@ function New-PSSQLBackup {
     $BackupResults = [List[psobject]]::new()
     [string]$timestamp = Get-Date -format yyyy-MM-dd-HHmmss
     # Check if backup log file exist, if not - create it
-    [string]$LogFile = "$env:SystemDrive\Temp\SQLDBBackup_log.txt"
-        if (-not([Directory]::Exists($LogFile))){
-            [void](New-Item -Path $LogFile -ItemType File -Force)
+    [DirectoryInfo]$LogPath = "$env:SystemDrive\Temp\SQLDBBackup_log.txt"
+        if (-not([Directory]::Exists($LogPath))){
+            $Log = [Logger]::new()
+            [void]($Log.Create($LogPath.Parent.FullName,$LogPath.BaseName))
         }
+
         try {
             if (!(Get-Module -Name SQLServer -ListAvailable)) {
                 Write-Warning "[Warning] SQLServer Module not installed. Installing now..."
@@ -312,7 +340,7 @@ function New-PSSQLBackup {
         }
         catch {
             throw "[WARNING] Couldn't import/install SQLModule. Checking if required assembly are available..."
-            "[$(Get-Date)] :: $($_.Exception.Message)" | Out-File $LogFile -Append
+            [Logger]::Add($LogPath,$_.Exception.Message)
             Continue
         }
         try {
@@ -323,7 +351,7 @@ function New-PSSQLBackup {
         }
         catch {
             Throw "[ERROR] Couldn't load Microsoft.SqlServer Asssembly. SQLServer module must be installed! Aborting..."
-            "[$(Get-Date)] :: $($_.Exception.Message)" | Out-File $LogFile -Append
+            [Logger]::Add($LogPath,$_.Exception.Message)
             exit
         }
     }
@@ -355,7 +383,7 @@ function New-PSSQLBackup {
     
             catch {
                 Throw "Something went wrong. Check Log! Building backup of $db - FAILED"
-                "[$(Get-Date)] :: $($_.Exception.Message)" | Out-File $LogFile -Append
+                [Logger]::Add($LogPath,$_.Exception.Message)
                 exit
             }
     
@@ -384,7 +412,7 @@ function New-PSSQLBackup {
                 $SQLBackupOutput | Add-Member -NotePropertyMembers @{ServerName = $SQLServer}
                 $BackupResults.Add($SQLBackupOutput)
                 # Put errors in log file
-                "[$(Get-Date)] :: $($_.Exception.Message)" | Out-File $LogFile -Append
+                [Logger]::Add($LogPath,$_.Exception.Message)
                 Continue
             }
         }
@@ -409,7 +437,7 @@ function New-PSSQLBackup {
         }
         catch {
             Throw "[ERROR] Couldn't find SQLBackupStatus.html. Aborting sending mail message..."
-            "[$(Get-Date)] :: $($_.Exception.Message)" | Out-File $LogFile -Append
+            [Logger]::Add($LogPath,$_.Exception.Message)
             exit
         }
     }
@@ -490,11 +518,15 @@ function Remove-PSSQLBackup {
         if (-not $PSBoundParameters.ContainsKey('WhatIf')) {
             $WhatIfPreference = $PSCmdlet.SessionState.PSVariable.GetValue('WhatIfPreference')
         }
+
         [array]$FilesArray = Get-ChildItem -Path $Path -File -Force
-        [string]$LogFile = "$env:SystemDrive\Temp\SQLDBBackup_log.txt"
-        if (-not([Directory]::Exists($LogFile))){
-            [void](New-Item -Path $LogFile -ItemType File -Force)
+        # Check if backup log file exist, if not - create it
+        [DirectoryInfo]$LogPath = "$env:SystemDrive\Temp\SQLDBBackup_log.txt"
+            if (-not([Directory]::Exists($LogPath))){
+                $Log = [Logger]::new()
+                [void]($Log.Create($LogPath.Parent.FullName,$LogPath.BaseName))
         }
+
         if ($FileName) {
             $BackupPath = $FilesArray | Where-Object {$_.Name -like $FileName}
         }
@@ -537,7 +569,7 @@ function Remove-PSSQLBackup {
                 $Failed | Add-Member -NotePropertyMembers @{FailedTime = (Get-Date)}
                 $Failed.BackupStatus = 'FAILED!'
                 $RemovedFiles.Add($Failed)
-                "[$(Get-Date)] :: $($_.Exception.Message)" | Out-File $LogFile -Append
+                [Logger]::Add($LogPath,$_.Exception.Message)
                 Continue
             }
         }

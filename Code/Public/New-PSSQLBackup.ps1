@@ -18,6 +18,7 @@
 #requires -Version 5
 
 using module .\Classes\PSSQLBackupClass.ps1
+using module .\Classes\LoggerClass.ps1
 using namespace System.Collections.Generic
 using namespace System.Net.Mail
 using namespace System.IO
@@ -62,10 +63,12 @@ function New-PSSQLBackup {
     $BackupResults = [List[psobject]]::new()
     [string]$timestamp = Get-Date -format yyyy-MM-dd-HHmmss
     # Check if backup log file exist, if not - create it
-    [string]$LogFile = "$env:SystemDrive\Temp\SQLDBBackup_log.txt"
-        if (-not([Directory]::Exists($LogFile))){
-            [void](New-Item -Path $LogFile -ItemType File -Force)
+    [DirectoryInfo]$LogPath = "$env:SystemDrive\Temp\SQLDBBackup_log.txt"
+        if (-not([Directory]::Exists($LogPath))){
+            $Log = [Logger]::new()
+            [void]($Log.Create($LogPath.Parent.FullName,$LogPath.BaseName))
         }
+
         try {
             if (!(Get-Module -Name SQLServer -ListAvailable)) {
                 Write-Warning "[Warning] SQLServer Module not installed. Installing now..."
@@ -78,9 +81,10 @@ function New-PSSQLBackup {
         }
         catch {
             throw "[WARNING] Couldn't import/install SQLModule. Checking if required assembly are available..."
-            "[$(Get-Date)] :: $($_.Exception.Message)" | Out-File $LogFile -Append
+            [Logger]::Add($LogPath,$_.Exception.Message)
             Continue
         }
+
         try {
             # We need those assembly to be able to connect to SQL and take buckup
             # Abort if we can't imports it. 
@@ -89,7 +93,7 @@ function New-PSSQLBackup {
         }
         catch {
             Throw "[ERROR] Couldn't load Microsoft.SqlServer Asssembly. SQLServer module must be installed! Aborting..."
-            "[$(Get-Date)] :: $($_.Exception.Message)" | Out-File $LogFile -Append
+            [Logger]::Add($LogPath,$_.Exception.Message)
             exit
         }
     }
@@ -121,7 +125,7 @@ function New-PSSQLBackup {
     
             catch {
                 Throw "Something went wrong. Check Log! Building backup of $db - FAILED"
-                "[$(Get-Date)] :: $($_.Exception.Message)" | Out-File $LogFile -Append
+                [Logger]::Add($LogPath,$_.Exception.Message)
                 exit
             }
     
@@ -150,7 +154,7 @@ function New-PSSQLBackup {
                 $SQLBackupOutput | Add-Member -NotePropertyMembers @{ServerName = $SQLServer}
                 $BackupResults.Add($SQLBackupOutput)
                 # Put errors in log file
-                "[$(Get-Date)] :: $($_.Exception.Message)" | Out-File $LogFile -Append
+                [Logger]::Add($LogPath,$_.Exception.Message)
                 Continue
             }
         }
@@ -175,7 +179,7 @@ function New-PSSQLBackup {
         }
         catch {
             Throw "[ERROR] Couldn't find SQLBackupStatus.html. Aborting sending mail message..."
-            "[$(Get-Date)] :: $($_.Exception.Message)" | Out-File $LogFile -Append
+            [Logger]::Add($LogPath,$_.Exception.Message)
             exit
         }
     }

@@ -30,8 +30,10 @@
 #requires -Version 5
 
 using module .\Classes\PSSQLBackupClass.ps1
+using module .\Classes\LoggerClass.ps1
 using namespace System.Collections.Generic
 using namespace System.IO
+
 function Remove-PSSQLBackup {
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'High')]
     param (
@@ -79,11 +81,15 @@ function Remove-PSSQLBackup {
         if (-not $PSBoundParameters.ContainsKey('WhatIf')) {
             $WhatIfPreference = $PSCmdlet.SessionState.PSVariable.GetValue('WhatIfPreference')
         }
+
         [array]$FilesArray = Get-ChildItem -Path $Path -File -Force
-        [string]$LogFile = "$env:SystemDrive\Temp\SQLDBBackup_log.txt"
-        if (-not([Directory]::Exists($LogFile))){
-            [void]([File]::Create($LogFile))
+        # Check if backup log file exist, if not - create it
+        [DirectoryInfo]$LogPath = "$env:SystemDrive\Temp\SQLDBBackup_log.txt"
+            if (-not([Directory]::Exists($LogPath))){
+                $Log = [Logger]::new()
+                [void]($Log.Create($LogPath.Parent.FullName,$LogPath.BaseName))
         }
+
         if ($FileName) {
             $BackupPath = $FilesArray | Where-Object {$_.Name -like $FileName}
         }
@@ -105,6 +111,7 @@ function Remove-PSSQLBackup {
         else {
             $PathFilter = $BackupPath
         }
+
         $RemovedFiles = [List[psobject]]::new()
         foreach ($BackupFile in $PathFilter) {
             try{
@@ -126,7 +133,7 @@ function Remove-PSSQLBackup {
                 $Failed | Add-Member -NotePropertyMembers @{FailedTime = (Get-Date)}
                 $Failed.BackupStatus = 'FAILED!'
                 $RemovedFiles.Add($Failed)
-                "[$(Get-Date)] :: $($_.Exception.Message)" | Out-File $LogFile -Append
+                [Logger]::Add($LogPath,$_.Exception.Message)
                 Continue
             }
         }

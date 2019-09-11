@@ -31,6 +31,7 @@
 #requires -Version 5
 
 using module .\Classes\PSSQLBackupClass.ps1
+using module .\Classes\LoggerClass.ps1
 using namespace System.Collections.Generic
 using namespace System.IO
 
@@ -89,9 +90,11 @@ function Get-PSSQLBackup {
         # Creating list for Objects
         $Output = [List[psobject]]::new()
         [array]$FilePath = Get-ChildItem -Path $Path -File
-        [string]$LogFile = "$env:SystemDrive\Temp\SQLDBBackup_log.txt"
-            if (-not([Directory]::Exists($LogFile))){
-                [void]([File]::Create($LogFile))
+        # Check if backup log file exist, if not - create it
+        [DirectoryInfo]$LogPath = "$env:SystemDrive\Temp\SQLDBBackup_log.txt"
+            if (-not([Directory]::Exists($LogPath))){
+                $Log = [Logger]::new()
+                [void]($Log.Create($LogPath.Parent.FullName,$LogPath.BaseName))
         }
     }
     
@@ -142,7 +145,7 @@ function Get-PSSQLBackup {
                 # We need to be able to find more backup files even if we don't find name file
                 # then it will be just noted in log file but continue with next object
                 Write-Warning "Couldn't find any item matching $item."
-                "[$(Get-Date)] :: $($_.Exception.Message)" | Out-File $LogFile -Append
+                [Logger]::Add($LogPath,$_.Exception.Message)
                 Continue
             }
                 # return list with objects we found
