@@ -346,8 +346,8 @@ function New-PSSQLBackup {
                 $smoBackup.Database = $db
                 $smoBackup.MediaDescription = "Disk"
                 $smoBackup.PercentCompleteNotification = "10"
-                $percentEventHandler = [Microsoft.SqlServer.Management.Smo.PercentCompleteEventHandler] { Write-Output "[INFO] Executing $($_.Percent)%" }
-                $completedEventHandler = [Microsoft.SqlServer.Management.Common.ServerMessageEventHandler] { Write-Output "[INFO] Database backup of $db to $backupFile is DONE" }
+                $percentEventHandler = [Microsoft.SqlServer.Management.Smo.PercentCompleteEventHandler] { Write-Host "[INFO] Executing $($_.Percent)%" }
+                $completedEventHandler = [Microsoft.SqlServer.Management.Common.ServerMessageEventHandler] { Write-Host "[INFO] Database backup of $db to $backupFile is DONE" }
                 $smoBackup.add_PercentComplete($percentEventHandler)
                 $smoBackup.add_Complete($completedEventHandler)
                 $smoBackup.Devices.AddDevice($backupFile,"File")
