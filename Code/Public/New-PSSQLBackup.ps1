@@ -28,7 +28,7 @@ function New-PSSQLBackup {
         # Define SQLServer connection
         [Parameter(Position = 0)]
         [ValidateNotNullOrEmpty()]
-        [Alias('Server')]
+        [Alias('ComputerName')]
         [string]$SQLServer = 'localhost',
 
         # Databases to backup
@@ -37,7 +37,7 @@ function New-PSSQLBackup {
         Position = 1, 
         ValueFromPipeline)]
         [ValidateNotNullOrEmpty()]
-        [Alias('DB')]
+        [Alias('SqlDB')]
         [string[]]$Database,
 
         # Backup Path
@@ -57,16 +57,14 @@ function New-PSSQLBackup {
     TD {border-width: 1px; padding: 3px; border-style: solid; border-color: black;}
     </style>
 "@
-    # Changing information pref. to continue to display console messages
-    $InformationPreference = 'Continue'
     # Get configuration from json file
     $null = Get-PSSQLConfig
     $BackupResults = [List[psobject]]::new()
-    [datetime]$timestamp = Get-Date -format yyyy-MM-dd-HHmmss
+    [string]$timestamp = Get-Date -format yyyy-MM-dd-HHmmss
     # Check if backup log file exist, if not - create it
     [string]$LogFile = "$env:SystemDrive\Temp\SQLDBBackup_log.txt"
         if (-not([Directory]::Exists($LogFile))){
-            [void]([File]::Create($LogFile))
+            [void](New-Item -Path $LogFile -ItemType File -Force)
         }
         try {
             if (!(Get-Module -Name SQLServer -ListAvailable)) {
@@ -74,8 +72,8 @@ function New-PSSQLBackup {
                 [void](Install-Module -Name SqlServer -AllowClobber)
             }
             else {
-                Write-Information "[INFO] SQLServer Module installed. Importing...."
-                [void](Import-Module -Name SqlServer -AllowClobber)
+                Write-Host -ForegroundColor White -BackgroundColor DarkGreen "[INFO] SQLServer Module installed. Importing...."
+                [void](Import-Module -Name SqlServer -Global)
             }
         }
         catch {
@@ -97,10 +95,10 @@ function New-PSSQLBackup {
     }
     
     process {
-        foreach ($db in $SqlDatabase | Where-Object { $_.IsSystemObject -eq $False}){
-            Write-Information "[INFO] Starter Backup-SQL-Database $TimeStarted"
-            Write-Information "[INFO] Database: $db"
-            Write-Information "[INFO] SQLBackup destination: $Path"
+        foreach ($db in $Database){
+            Write-Host -ForegroundColor Black -BackgroundColor White "[INFO] Starter Backup-SQL-Database $TimeStarted"
+            Write-Host -ForegroundColor Black -BackgroundColor White "[INFO] Database: $db"
+            Write-Host -ForegroundColor Black -BackgroundColor White "[INFO] SQLBackup destination: $Path"
             #SQL Backup initial config
             $SQLBackup = [Microsoft.SqlServer.Management.Smo.Server]::new($SqlServer)
             $backupFile = $Path + '\' + $db + '_' + $timestamp + '.bak'
@@ -110,12 +108,12 @@ function New-PSSQLBackup {
                 $smoBackup = [Microsoft.SqlServer.Management.Smo.Backup]::new()
                 $smoBackup.Action = "Database"
                 $smoBackup.BackupSetDescription = "Full backup of $($db)"
-                $smoBackup.BackupSetName = "$($SqlDatabase) Backup"
-                $smoBackup.Database = $SqlDatabase
+                $smoBackup.BackupSetName = "$($db) Backup"
+                $smoBackup.Database = $db
                 $smoBackup.MediaDescription = "Disk"
                 $smoBackup.PercentCompleteNotification = "10"
-                $percentEventHandler = [Microsoft.SqlServer.Management.Smo.PercentCompleteEventHandler] { Write-Output "[INFO] Executing $($_.Percent)%" }
-                $completedEventHandler = [Microsoft.SqlServer.Management.Common.ServerMessageEventHandler] { Write-Output "[INFO] Database backup of $db to $backupFile is DONE" }
+                $percentEventHandler = [Microsoft.SqlServer.Management.Smo.PercentCompleteEventHandler] { Write-Host "[INFO] Executing $($_.Percent)%" }
+                $completedEventHandler = [Microsoft.SqlServer.Management.Common.ServerMessageEventHandler] { Write-Host "[INFO] Database backup of $db to $backupFile is DONE" }
                 $smoBackup.add_PercentComplete($percentEventHandler)
                 $smoBackup.add_Complete($completedEventHandler)
                 $smoBackup.Devices.AddDevice($backupFile,"File")
@@ -128,14 +126,11 @@ function New-PSSQLBackup {
             }
     
             try {
-                # Starting SQL Server backup after building all neccessery args.
-                Write-Information "[INFO]"
-                Write-Information "Starting backup of $db"
+                Write-Host -ForegroundColor White -BackgroundColor DarkRed "Starting backup of $db"
+                # Starting SQL Backup here
                 $smoBackup.SqlBackup($SQLBackup)
-                
-                Write-Information "[INFO] Backup Done on :: $(Get-Date)"
-                Write-Information "[DONE]"
-                Write-Information ""
+
+                Write-Host -ForegroundColor White -BackgroundColor DarkGreen "[DONE] Backup Done on :: $(Get-Date)"
 
                 # If sucessfull - building object and for each Database
                 $BackupFileInfo = [FileInfo]::new($Path)
