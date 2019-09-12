@@ -34,10 +34,11 @@ class Logger {
 # PSSQLBackupClass initialization. Needs to be loaded before functions
 # This class is used to create PSSQLBackup objects
 class PSSQLBackup {
-    hidden[string]$SQLServer = 'localhost'
+    hidden [string]$SQLServer = 'localhost'
     [string]$Database
     [string]$BackupName
-    hidden[string]$FullName
+    hidden [string]$FullName
+    hidden [string]$Path
     [datetime]$BackupDate
     [int]$SizeInMB
     [string]$BackupStatus
@@ -49,6 +50,7 @@ class PSSQLBackup {
             $this.BackupDate
             $this.SizeInMB
             $this.FullName
+            $this.Path
         }
         # Class constructor - 
         PSSQLBackup([string]$Database, [string]$BackupName, [datetime]$BackupDate, [string]$Path, [int]$SizeInMB, [string]$Status) {
@@ -77,6 +79,7 @@ class PSSQLBackup {
             $Objects.BackupName = $item.name
             $Objects.BackupDate = $item.LastWriteTime
             $Objects.FullName = $item.FullName
+            $Objects.Path = $item.Directory
             $Objects.SizeInMB = ([math]::Round($item.Length /1MB, 2)) 
             $Objects.BackupStatus = $FileStatus
             # return object
@@ -155,13 +158,11 @@ function Get-PSSQLBackup {
         [Parameter(
         ParameterSetName = 'Default',
         Mandatory = $True,
-        ValueFromPipeline,
         ValueFromPipelineByPropertyName,
         Position = 0)]
         [Parameter( 
         ParameterSetName = 'DayFilter',
         Mandatory = $True,
-        ValueFromPipeline,
         ValueFromPipelineByPropertyName,
         Position = 0)]
         [ValidateScript({Test-Path $_ -PathType 'Container'})]
@@ -477,13 +478,14 @@ function Remove-PSSQLBackup {
         # Path to backup store
         [Parameter(
         Mandatory = $true,
-        ValueFromPipeline,
         ValueFromPipelineByPropertyName)]
         [ValidateNotNullOrEmpty()]
         [string]$Path,
 
         [Parameter(
-        Mandatory = $true, ValueFromPipeline)]
+        Mandatory = $true, 
+        ValueFromPipeline,
+        ValueFromPipelineByPropertyName)]
         [Alias('File')]
         [ValidateNotNullOrEmpty()]
         [string[]]$FileName,
@@ -557,6 +559,7 @@ function Remove-PSSQLBackup {
                     Write-Information "$($BackupFile.Name) removed!"
                     $RMFiles = [PSSQLBackup]::new()
                     $RMFiles.BackupName = $BackupFile.Name
+                    $RMFiles.Path = $BackupFile.DirectoryName
                     $RMFiles | Add-Member -NotePropertyMembers @{RemovedTime = (Get-Date)}
                     $RMFiles.BackupStatus = 'REMOVED'
                     $RemovedFiles.Add($RMFiles)

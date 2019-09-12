@@ -40,13 +40,14 @@ function Remove-PSSQLBackup {
         # Path to backup store
         [Parameter(
         Mandatory = $true,
-        ValueFromPipeline,
         ValueFromPipelineByPropertyName)]
         [ValidateNotNullOrEmpty()]
         [string]$Path,
 
         [Parameter(
-        Mandatory = $true, ValueFromPipeline)]
+        Mandatory = $true, 
+        ValueFromPipeline,
+        ValueFromPipelineByPropertyName)]
         [Alias('File')]
         [ValidateNotNullOrEmpty()]
         [string[]]$FileName,
@@ -121,6 +122,7 @@ function Remove-PSSQLBackup {
                     Write-Information "$($BackupFile.Name) removed!"
                     $RMFiles = [PSSQLBackup]::new()
                     $RMFiles.BackupName = $BackupFile.Name
+                    $RMFiles.Path = $BackupFile.DirectoryName
                     $RMFiles | Add-Member -NotePropertyMembers @{RemovedTime = (Get-Date)}
                     $RMFiles.BackupStatus = 'REMOVED'
                     $RemovedFiles.Add($RMFiles)

@@ -42,13 +42,11 @@ function Get-PSSQLBackup {
         [Parameter(
         ParameterSetName = 'Default',
         Mandatory = $True,
-        ValueFromPipeline,
         ValueFromPipelineByPropertyName,
         Position = 0)]
         [Parameter( 
         ParameterSetName = 'DayFilter',
         Mandatory = $True,
-        ValueFromPipeline,
         ValueFromPipelineByPropertyName,
         Position = 0)]
         [ValidateScript({Test-Path $_ -PathType 'Container'})]
