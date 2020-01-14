@@ -7,6 +7,6 @@ Some of the main features of PSSQLBackup are:
   * Create new backup of multiple databases
   * Remove previous backups
 
-All functions support multiple searches, backup and remove. You can e.g. search for previous backups and get the output as objects 
-with properties like Database name, backup taken, file name and so on and pipe it to remove-pssqlbackup which will remove all defined backups.
+All functions support multiple searches, backup & remove. You can e.g. search for previous backups and get the output as objects 
+with properties like database name, backup date, file name and so on and pipe it to remove-pssqlbackup which will remove all defined backups.
 
